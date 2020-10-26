@@ -29,10 +29,10 @@ def invoke_cmd_worker(item):
     try:
         pid = multiprocessing.current_process().pid
 
-        plugin_dir, plugin, filepath, events_limit = item
+        plugin_dir, plugin, filepath, events_limit, start_date = item
         worker_fpath = os.path.abspath(__file__)
-        cmd = 'gzip -d -c %s | python2.7 %s %s %s %s' % (
-            filepath, worker_fpath, plugin_dir, plugin, events_limit
+        cmd = 'gzip -d -c %s | python2.7 %s %s %s %s %s' % (
+            filepath, worker_fpath, plugin_dir, plugin, events_limit, start_date
         )
         logger.info(
             '%d: Starting job: %s', pid, cmd
@@ -71,6 +71,10 @@ def parse_args():
         help='Read only first N events. If not specified, will read all events',
         default=0
     )
+    parser.add_argument(
+        'start_date',
+        help='First date of tracking range',
+    )
     return parser.parse_args()
 
 
@@ -82,7 +86,7 @@ def worker():
     try:
         processor = load_plugin(
             args.plugin, plugin_dir=args.plugin_dir
-        ).DataStreamWorker()
+        ).DataStreamWorker(start_date=args.start_date)
         iterate_events(processor, events_limit=args.events_limit)
         processor.pre_output()
         sys.stdout.write(processor.dumps_results() + '\n')
