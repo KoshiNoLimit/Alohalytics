@@ -6,43 +6,24 @@ import multiprocessing
 import os
 import argparse
 
-from pyaloha.protocol.base import str2date
+from sys import argv
+
+import datetime
+
+from pyaloha.protocol import WorkerResults, str2date
 from pyaloha.settings import DEFAULT_WORKER_NUM, DEFAULT_ALOHA_DATA_DIR
 from pyaloha.worker import invoke_cmd_worker, load_plugin, setup_logs
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'plugin_name',
-        help='Plugin name, e.g. `userbase`, `gpu_rating`'
-    )
-    parser.add_argument(
-        'start_date', type=str2date,
-        help='Date to start workers from.',
-    )
-    parser.add_argument(
-        'end_date', type=str2date,
-        help='Date to stop workers at.',
-    )
-    parser.add_argument(
-        'events_limit', type=int, nargs='?',
-        help='Read only first N events. If not specified, will read all events',
-        default=0
-    )
-    return parser.parse_args()
-
-
 def cmd_run(plugin_dir,
             data_dir=DEFAULT_ALOHA_DATA_DIR,
-            worker_num=DEFAULT_WORKER_NUM):
+            worker_num=DEFAULT_WORKER_NUM, **kwargs):
     """Main command line interface to pyaloha system."""
-    args = parse_args()
 
     main_script(
-        args.plugin_name,
-        args.start_date, args.end_date,
-        plugin_dir=plugin_dir, events_limit=args.events_limit,
+        argv[1],
+        str2date(argv[2]), str2date(argv[3]) + datetime.timedelta(days=60),
+        plugin_dir=plugin_dir, events_limit=int(argv[4]) if len(argv) > 4 else 0,
         data_dir=data_dir,
         worker_num=worker_num
     )
@@ -135,7 +116,7 @@ def aggregate_raw_data(
             )
             for file_name, results in engine(invoke_cmd_worker, batch_tasks):
                 try:
-                    results = aggregator.loads_results(results)
+                    results = WorkerResults.loads_object(results)
                     logger.info(
                         'Aggregator: task %s is being aggregated' % file_name
                     )

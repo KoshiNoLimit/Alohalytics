@@ -2,7 +2,7 @@ import ctypes
 import itertools
 import os
 
-from pyaloha.protocol.base import SerializableDatetime
+from pyaloha.protocol import SerializableDatetime
 
 try:
     from ctypes import set_conversion_mode
@@ -55,14 +55,13 @@ class PythonEventTime(object):
 
     @property
     def is_accurate(self):
-        if self.client_creation > self.server_upload - self.delta_past and\
-                self.client_creation < self.server_upload + self.delta_future:
+        if self.client_creation < self.server_upload + self.delta_future:
             return True
         return False
 
     def __dumpdict__(self):
         return {
-            'dtime': self.dtime.__dumpdict__()
+            'dtime': self.dtime
         }
 
 
